@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Building, ClipboardList, CreditCard, FileText, Paperclip, Home, Users, type LucideIcon } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
@@ -39,11 +40,9 @@ const LayananDetail = () => {
   const layananQuery = useQuery({
     queryKey: ["layanan", "public", slug],
     queryFn: async () => {
-      const res = await fetch(`/api/layanan/public/${slug}`);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error("failed_fetch");
-      const data = (await res.json()) as { item: LayananItem };
-      return data.item;
+      const data = await apiFetch(`/api/layanan/public/${slug}`);
+      if (!data) return null;
+      return data.item as LayananItem;
     },
     enabled: Boolean(slug),
     refetchOnWindowFocus: true,

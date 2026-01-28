@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -164,50 +165,39 @@ const AdminLayanan = () => {
       });
 
       for (const id of toDelete) {
-        const res = await fetch(`/api/layanan/${id}`, { method: "DELETE", headers });
-        if (!res.ok && res.status !== 204) throw new Error("failed_delete");
+        await apiFetch(`/api/layanan/${id}`, { method: "DELETE" });
       }
 
       for (const item of toUpdate) {
-        const res = await fetch(`/api/layanan/${item.id}`, {
+        await apiFetch(`/api/layanan/${item.id}`, {
           method: "PUT",
           headers,
           body: JSON.stringify({
             slug: item.slug,
             title: item.title,
             description: item.description,
-            persyaratan: item.persyaratan,
-            alur: (item as any).alur,
-            attachmentUrl: item.attachmentUrl ? item.attachmentUrl : null,
-            externalLink: (item as any).externalLink ? (item as any).externalLink : null,
+            persyaratan: item.persyaratanText.split("\n").map((s) => s.trim()).filter(Boolean),
+            alur: item.alurText.split("\n").map((s) => s.trim()).filter(Boolean),
+            attachmentUrl: item.attachmentUrl || null,
+            externalLink: item.externalLink || null,
           }),
         });
-        if (res.status === 409) {
-          const data = (await res.json().catch(() => ({}))) as { message?: string };
-          throw new Error(data.message || "conflict");
-        }
-        if (!res.ok) throw new Error("failed_update");
       }
 
       for (const item of toCreate) {
-        const res = await fetch("/api/layanan", {
+        await apiFetch("/api/layanan", {
           method: "POST",
           headers,
           body: JSON.stringify({
             slug: item.slug,
             title: item.title,
             description: item.description,
-            persyaratan: item.persyaratan,
-            alur: (item as any).alur,
-            attachmentUrl: item.attachmentUrl ? item.attachmentUrl : null,
-            externalLink: (item as any).externalLink ? (item as any).externalLink : null,
+            persyaratan: item.persyaratanText.split("\n").map((s) => s.trim()).filter(Boolean),
+            alur: item.alurText.split("\n").map((s) => s.trim()).filter(Boolean),
+            attachmentUrl: item.attachmentUrl || null,
+            externalLink: item.externalLink || null,
           }),
         });
-        if (res.status === 409) {
-          const data = (await res.json().catch(() => ({}))) as { message?: string };
-          throw new Error(data.message || "conflict");
-        }
-        if (!res.ok) throw new Error("failed_create");
       }
     },
     onSuccess: async () => {
@@ -261,10 +251,8 @@ const AdminLayanan = () => {
   const layananQuery = useQuery({
     queryKey: ["layanan"],
     queryFn: async () => {
-      const res = await fetch("/api/layanan", { headers });
-      if (!res.ok) throw new Error("failed_fetch");
-      const data = (await res.json()) as { items: Layanan[] };
-      return data.items;
+      const data = await apiFetch("/api/layanan", { headers });
+      return data.items as Layanan[];
     },
     enabled: Boolean(token),
   });
@@ -757,7 +745,7 @@ const AdminLayanan = () => {
                         </div>
 
                         <div className="lg:col-span-6">
-                          <Label>Ajukan Sekarang</Label>
+                          <Label>Link Website Eksternal</Label>
                           <Input
                             value={item.externalLink || ""}
                             onChange={(e) => {

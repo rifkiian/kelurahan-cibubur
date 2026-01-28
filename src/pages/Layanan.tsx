@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import {
   Ambulance,
@@ -127,10 +128,8 @@ const Layanan = () => {
   const layananQuery = useQuery({
     queryKey: ["layanan", "public"],
     queryFn: async () => {
-      const res = await fetch("/api/layanan/public");
-      if (!res.ok) throw new Error("failed_fetch");
-      const data = (await res.json()) as { items: LayananItem[] };
-      return data.items;
+      const data = await apiFetch("/api/layanan/public");
+      return data.items as LayananItem[];
     },
     refetchOnWindowFocus: true,
     refetchInterval: 30000,
