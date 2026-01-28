@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+ enum PengaduanStatus {
+   BARU
+   DIPROSES
+   SELESAI
+ }
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Penduduk {
+  id           String   @id @default(cuid())
+  nik          String   @unique
+  nama         String
+  jenisKelamin String
+  tanggalLahir String?
+  alamat       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Layanan {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String
+  color        String
+  persyaratan  String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+ model Pengaduan {
+   id          String          @id @default(cuid())
+   name        String
+   phone       String
+   category    String
+   location    String
+   description String
+   photoUrl    String?
+   status      PengaduanStatus @default(BARU)
+   createdAt   DateTime        @default(now())
+   updatedAt   DateTime        @updatedAt
+ }
+
+ model Berita {
+   id            String   @id @default(cuid())
+   slug          String   @unique
+   title         String
+   excerpt       String?
+   content       String
+   coverImageUrl String?
+   published     Boolean  @default(false)
+   publishedAt   DateTime?
+   createdAt     DateTime @default(now())
+   updatedAt     DateTime @updatedAt
+ }
+
+ model Agenda {
+   id          String   @id @default(cuid())
+   title       String
+   description String?
+   location    String?
+   startAt     DateTime
+   endAt       DateTime?
+   createdAt   DateTime @default(now())
+   updatedAt   DateTime @updatedAt
+ }
+
+ model SiteTentang {
+   id        Int      @id
+   intro     String
+   visi      String
+   misi      String
+   createdAt DateTime @default(now())
+   updatedAt DateTime @updatedAt
+ }
+
+ model SiteKontak {
+   id         Int      @id
+   address    String
+   phones     String
+   email      String
+   hours      String
+   mapEmbedUrl String
+   createdAt  DateTime @default(now())
+   updatedAt  DateTime @updatedAt
+ }

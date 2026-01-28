@@ -1,23 +1,35 @@
-import { Building2, MapPin, Phone, Mail, Clock, Facebook, Instagram, Twitter } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Facebook, Instagram, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import jaktimLogo from "@/assets/jaktimlogo.png";
+
+type LayananItem = {
+  id: string;
+  slug: string;
+  title: string;
+};
 
 const quickLinks = [
   { label: "Beranda", href: "/" },
-  { label: "Layanan", href: "#layanan" },
-  { label: "Berita", href: "#berita" },
-  { label: "Tentang Kami", href: "#tentang" },
+  { label: "Layanan", href: "/layanan" },
+  { label: "Berita", href: "/#berita" },
+  { label: "Tentang Kami", href: "/#tentang" },
   { label: "Portal Admin", href: "/admin" },
 ];
 
-const services = [
-  "Surat Keterangan",
-  "Kartu Keluarga",
-  "KTP Elektronik",
-  "Surat Pindah",
-  "Perizinan Usaha",
-];
-
 export function Footer() {
+  const layananQuery = useQuery({
+    queryKey: ["layanan", "public", "footer"],
+    queryFn: async () => {
+      const res = await fetch("/api/layanan/public?limit=6");
+      if (!res.ok) throw new Error("failed_fetch");
+      const data = (await res.json()) as { items: LayananItem[] };
+      return data.items;
+    },
+  });
+
+  const layananItems = layananQuery.data || [];
+
   return (
     <footer id="kontak" className="bg-sidebar text-sidebar-foreground">
       <div className="container mx-auto px-4 py-16">
@@ -25,8 +37,8 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-sidebar-primary flex items-center justify-center">
-                <Building2 className="w-7 h-7 text-sidebar-primary-foreground" />
+              <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex items-center justify-center p-1">
+                <img src={jaktimLogo} alt="Logo Jakarta Timur" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="font-bold text-lg">Kelurahan Cibubur</div>
@@ -40,7 +52,7 @@ export function Footer() {
               <a href="#" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
+              <a href="https://www.instagram.com/kel.cibubur/?hl=id" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
               <a href="#" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
@@ -70,14 +82,14 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-lg mb-6">Layanan</h4>
             <ul className="space-y-3">
-              {services.map((service) => (
-                <li key={service}>
-                  <a 
-                    href="#layanan" 
+              {layananItems.map((service) => (
+                <li key={service.slug}>
+                  <Link 
+                    to={`/layanan/${service.slug}`}
                     className="text-sidebar-foreground/70 hover:text-sidebar-primary transition-colors text-sm"
                   >
-                    {service}
-                  </a>
+                    {service.title}
+                  </Link>
                 </li>
               ))}
             </ul>

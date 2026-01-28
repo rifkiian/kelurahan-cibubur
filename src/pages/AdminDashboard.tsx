@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Users, FileText, Clock, CheckCircle, Bell, Search } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { StatsCard } from "@/components/admin/StatsCard";
@@ -7,9 +8,43 @@ import { ServiceRequests } from "@/components/admin/ServiceRequests";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/auth/AuthProvider";
+
+type StatsOverview = {
+  pendudukTotal: number;
+  pengaduan: {
+    total: number;
+    byStatus: { BARU: number; DIPROSES: number; SELESAI: number };
+    selesaiBulanIni: number;
+    last7Days: { date: string; count: number }[];
+  };
+};
 
 const AdminDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const { token } = useAuth();
+  const headers = useMemo(() => {
+    const h: Record<string, string> = {};
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  }, [token]);
+
+  const overviewQuery = useQuery({
+    queryKey: ["stats", "overview"],
+    queryFn: async () => {
+      const res = await fetch("/api/stats/overview", { headers });
+      if (!res.ok) throw new Error("failed_fetch");
+      return (await res.json()) as StatsOverview;
+    },
+    enabled: Boolean(token),
+  });
+
+  const overview = overviewQuery.data;
+  const pendudukTotal = overview?.pendudukTotal ?? 0;
+  const pengaduanBaru = overview?.pengaduan.byStatus.BARU ?? 0;
+  const pengaduanDiproses = overview?.pengaduan.byStatus.DIPROSES ?? 0;
+  const pengaduanSelesaiBulanIni = overview?.pengaduan.selesaiBulanIni ?? 0;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -52,33 +87,33 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard 
               title="Total Penduduk"
-              value="45,230"
-              change="+125 bulan ini"
-              changeType="positive"
+              value={overviewQuery.isLoading ? "..." : pendudukTotal}
+              change={overviewQuery.isError ? "Gagal memuat" : undefined}
+              changeType={overviewQuery.isError ? "negative" : "neutral"}
               icon={Users}
               iconColor="bg-primary/10 text-primary"
             />
             <StatsCard 
               title="Pengajuan Baru"
-              value="28"
-              change="12 menunggu verifikasi"
-              changeType="neutral"
+              value={overviewQuery.isLoading ? "..." : pengaduanBaru}
+              change={overviewQuery.isError ? "Gagal memuat" : "Menunggu"}
+              changeType={overviewQuery.isError ? "negative" : "neutral"}
               icon={FileText}
               iconColor="bg-secondary/20 text-secondary"
             />
             <StatsCard 
               title="Dalam Proses"
-              value="15"
-              change="Estimasi 2-3 hari"
-              changeType="neutral"
+              value={overviewQuery.isLoading ? "..." : pengaduanDiproses}
+              change={overviewQuery.isError ? "Gagal memuat" : "Diproses"}
+              changeType={overviewQuery.isError ? "negative" : "neutral"}
               icon={Clock}
               iconColor="bg-accent/20 text-accent-foreground"
             />
             <StatsCard 
               title="Selesai Bulan Ini"
-              value="142"
-              change="+18% dari bulan lalu"
-              changeType="positive"
+              value={overviewQuery.isLoading ? "..." : pengaduanSelesaiBulanIni}
+              change={overviewQuery.isError ? "Gagal memuat" : "Status: Selesai"}
+              changeType={overviewQuery.isError ? "negative" : "positive"}
               icon={CheckCircle}
               iconColor="bg-primary/10 text-primary"
             />

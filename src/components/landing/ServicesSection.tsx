@@ -1,47 +1,38 @@
-import { FileText, Users, Home, CreditCard, Building, BadgeCheck, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, BadgeCheck, Building, CreditCard, FileText, Home, Users, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const services = [
-  {
-    icon: FileText,
-    title: "Surat Keterangan",
-    description: "Pengurusan berbagai surat keterangan seperti SKCK, domisili, dan lainnya.",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    icon: Users,
-    title: "Kartu Keluarga",
-    description: "Pembuatan dan perubahan data Kartu Keluarga baru maupun update.",
-    color: "bg-secondary/20 text-secondary",
-  },
-  {
-    icon: Home,
-    title: "Surat Pindah",
-    description: "Pengurusan surat pindah masuk dan keluar wilayah kelurahan.",
-    color: "bg-accent/20 text-accent-foreground",
-  },
-  {
-    icon: CreditCard,
-    title: "KTP Elektronik",
-    description: "Layanan pembuatan e-KTP baru dan penggantian karena hilang/rusak.",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    icon: Building,
-    title: "Perizinan Usaha",
-    description: "Rekomendasi dan pengurusan izin usaha tingkat kelurahan.",
-    color: "bg-secondary/20 text-secondary",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Legalisasi Dokumen",
-    description: "Layanan legalisasi dan pengesahan dokumen resmi.",
-    color: "bg-accent/20 text-accent-foreground",
-  },
-];
+type LayananItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+};
+
+const iconMap: Record<string, LucideIcon> = {
+  "surat-keterangan": FileText,
+  "kartu-keluarga": Users,
+  "surat-pindah": Home,
+  "ktp-elektronik": CreditCard,
+  "perizinan-usaha": Building,
+  "legalisasi-dokumen": BadgeCheck,
+};
 
 export function ServicesSection() {
+  const layananQuery = useQuery({
+    queryKey: ["layanan", "public", "landing"],
+    queryFn: async () => {
+      const res = await fetch("/api/layanan/public?limit=6");
+      if (!res.ok) throw new Error("failed_fetch");
+      const data = (await res.json()) as { items: LayananItem[] };
+      return data.items;
+    },
+  });
+
+  const items = layananQuery.data || [];
+
   return (
     <section id="layanan" className="py-20 lg:py-32 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -60,32 +51,46 @@ export function ServicesSection() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, index) => (
-            <Card 
-              key={service.title}
-              className="group border-0 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
+          {layananQuery.isLoading && <div className="text-sm text-muted-foreground">Memuat layanan...</div>}
+          {layananQuery.isError && <div className="text-sm text-muted-foreground">Layanan belum tersedia</div>}
+
+          {items.map((service, index) => {
+            const Icon = iconMap[service.slug] || FileText;
+            return (
+            <Link
+              key={service.slug}
+              to={`/layanan/${service.slug}`}
+              className="block"
+              aria-label={`Buka layanan ${service.title}`}
             >
-              <CardContent className="p-6">
-                <div className={`w-14 h-14 rounded-xl ${service.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                  <service.icon className="w-7 h-7" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">{service.title}</h3>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
-                <div className="flex items-center text-primary font-semibold text-sm group-hover:gap-2 transition-all">
-                  Selengkapnya
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              <Card 
+                className="group border-0 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <CardContent className="p-6">
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                    <Icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">{service.title}</h3>
+                  <p className="text-muted-foreground mb-4">{service.description}</p>
+                  <div className="flex items-center text-primary font-semibold text-sm group-hover:gap-2 transition-all">
+                    Selengkapnya
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            );
+          })}
         </div>
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <Button size="lg">
-            Lihat Semua Layanan
-            <ArrowRight className="w-5 h-5" />
+          <Button size="lg" asChild>
+            <Link to="/layanan">
+              Lihat Semua Layanan
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </Button>
         </div>
       </div>

@@ -1,36 +1,41 @@
 import { Calendar, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const newsItems = [
-  {
-    id: 1,
-    title: "Jadwal Pelayanan Libur Tahun Baru 2026",
-    excerpt: "Pemberitahuan mengenai jadwal libur dan pelayanan kantor kelurahan selama periode tahun baru.",
-    date: "23 Jan 2026",
-    category: "Pengumuman",
-    image: "https://images.unsplash.com/photo-1604014237800-1c9102c219da?w=400&h=250&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Program Vaksinasi Gratis untuk Lansia",
-    excerpt: "Kelurahan Cibubur mengadakan program vaksinasi gratis untuk warga berusia 60 tahun ke atas.",
-    date: "20 Jan 2026",
-    category: "Kesehatan",
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=250&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Pelatihan UMKM Digital Marketing",
-    excerpt: "Dukung UMKM lokal melalui pelatihan digital marketing gratis untuk pelaku usaha.",
-    date: "18 Jan 2026",
-    category: "Ekonomi",
-    image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400&h=250&fit=crop",
-  },
-];
+type PublicBerita = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  coverImageUrl: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+};
+
+const formatDate = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};
 
 export function NewsSection() {
+  const beritaQuery = useQuery({
+    queryKey: ["berita-public", "latest"],
+    queryFn: async () => {
+      const res = await fetch("/api/berita/public?limit=3");
+      if (!res.ok) throw new Error("failed_fetch");
+      const data = (await res.json()) as { items: PublicBerita[] };
+      return data.items;
+    },
+  });
+
+  const items = beritaQuery.data || [];
+  const fallbackSrc = "https://images.unsplash.com/photo-1604014237800-1c9102c219da?w=400&h=250&fit=crop";
+
   return (
     <section id="berita" className="py-20 lg:py-32">
       <div className="container mx-auto px-4">
@@ -44,43 +49,60 @@ export function NewsSection() {
               Informasi & Pengumuman
             </h2>
           </div>
-          <Button variant="outline">
-            Lihat Semua Berita
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          <Link to="/berita">
+            <Button variant="outline">
+              Lihat Berita & Agenda
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
         </div>
 
         {/* News Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {newsItems.map((news, index) => (
-            <Card 
-              key={news.id}
-              className="group overflow-hidden border-0 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="relative overflow-hidden">
-                <img 
-                  src={news.image} 
-                  alt={news.title}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
-                  {news.category}
-                </Badge>
-              </div>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-                  <Calendar className="w-4 h-4" />
-                  {news.date}
+          {beritaQuery.isLoading && (
+            <div className="text-sm text-muted-foreground">Memuat berita...</div>
+          )}
+
+          {beritaQuery.isError && (
+            <div className="text-sm text-destructive">Gagal memuat berita</div>
+          )}
+
+          {items.map((news, index) => (
+            <Link to={`/berita/${news.slug}`} key={news.id} className="block">
+              <Card
+                className="group overflow-hidden border-0 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="relative overflow-hidden">
+                  <img
+                    src={news.coverImageUrl || fallbackSrc}
+                    alt={news.title}
+                    className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = fallbackSrc;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/55" />
+                  <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">Berita</Badge>
+
+                  <div className="absolute inset-0 flex items-end p-6">
+                    <div className="w-full opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(news.publishedAt || news.createdAt)}
+                      </div>
+                      <h3 className="mt-2 text-xl font-bold text-white line-clamp-2">{news.title}</h3>
+                      <p className="mt-3 text-white/90 text-sm leading-relaxed line-clamp-3">
+                        {news.excerpt || "-"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                  {news.title}
-                </h3>
-                <p className="text-muted-foreground text-sm line-clamp-2">
-                  {news.excerpt}
-                </p>
-              </CardContent>
-            </Card>
+                <CardContent className="p-5" />
+              </Card>
+            </Link>
           ))}
         </div>
       </div>
