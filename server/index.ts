@@ -1,7 +1,8 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import path from "path";
+import { execSync } from "node:child_process";
 import bcrypt from "bcryptjs";
 import authRoutes from "./routes/auth";
 import pendudukRoutes from "./routes/penduduk";
@@ -14,6 +15,10 @@ import siteRoutes from "./routes/site";
 import chatRoutes from "./routes/chat";
 import uploadsRoutes from "./routes/uploads";
 import { prisma } from "./prisma";
+
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const app = express();
 
@@ -30,11 +35,31 @@ async function bootstrapAdmin() {
   });
 }
 
+async function ensureDatabase() {
+  try {
+    await prisma.user.findFirst({ select: { id: true } });
+    return;
+  } catch (e) {
+    const anyE = e as any;
+    if (anyE?.code === "P2021") {
+      try {
+        await prisma.$disconnect();
+      } catch {
+        // ignore
+      }
+      execSync("npx prisma migrate deploy", { stdio: "inherit" });
+      await prisma.$connect();
+      return;
+    }
+    throw e;
+  }
+}
+
 app.use(express.json({ limit: "15mb" }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(
   cors({
-    origin: ["http://localhost:8080", "http://localhost:8081"],
+    origin: true,
     credentials: false,
   }),
 );
@@ -55,12 +80,18 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/uploads", uploadsRoutes);
 
 const port = Number(process.env.PORT || 3001);
-bootstrapAdmin()
-  .catch((e) => {
+
+const start = async () => {
+  try {
+    await ensureDatabase();
+    await bootstrapAdmin();
+  } catch (e) {
     console.error("bootstrapAdmin failed", e);
-  })
-  .finally(() => {
-    app.listen(port, () => {
-      console.log(`API listening on http://localhost:${port}`);
-    });
+  }
+
+  app.listen(port, () => {
+    console.log(`API listening on http://localhost:${port}`);
   });
+};
+
+start();
