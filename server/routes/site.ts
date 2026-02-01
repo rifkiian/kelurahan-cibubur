@@ -92,8 +92,21 @@ const defaultDarurat = [
 async function getTentangRow() {
   const model = getSiteTentangModel();
   if (model) {
-    const row = await model.findUnique({ where: { id: 1 } });
-    return row || null;
+    try {
+      const row = await model.findUnique({ where: { id: 1 } });
+      return row || null;
+    } catch (e) {
+      const anyE = e as any;
+      if (anyE?.code === "P2021") {
+        try {
+          await ensureTentangTable();
+        } catch {
+          // ignore
+        }
+        return null;
+      }
+      throw e;
+    }
   }
 
   try {
@@ -157,8 +170,21 @@ async function getPendudukTotal() {
 async function getDaruratRows() {
   const model = getSiteDaruratModel();
   if (model) {
-    const rows = await model.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
-    return rows || [];
+    try {
+      const rows = await model.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
+      return rows || [];
+    } catch (e) {
+      const anyE = e as any;
+      if (anyE?.code === "P2021") {
+        try {
+          await ensureDaruratTable();
+        } catch {
+          // ignore
+        }
+        return [];
+      }
+      throw e;
+    }
   }
 
   try {
@@ -245,8 +271,21 @@ async function ensureMetricsTable() {
 async function getMetricsRow() {
   const model = getSiteMetricsModel();
   if (model) {
-    const row = await model.findUnique({ where: { id: 1 } });
-    return row || null;
+    try {
+      const row = await model.findUnique({ where: { id: 1 } });
+      return row || null;
+    } catch (e) {
+      const anyE = e as any;
+      if (anyE?.code === "P2021") {
+        try {
+          await ensureMetricsTable();
+        } catch {
+          // ignore
+        }
+        return null;
+      }
+      throw e;
+    }
   }
 
   try {
@@ -263,8 +302,21 @@ async function getMetricsRow() {
 async function getOrganisasiRows() {
   const model = getSiteOrganisasiModel();
   if (model) {
-    const rows = await model.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
-    return rows || [];
+    try {
+      const rows = await model.findMany({ orderBy: [{ order: "asc" }, { createdAt: "asc" }] });
+      return rows || [];
+    } catch (e) {
+      const anyE = e as any;
+      if (anyE?.code === "P2021") {
+        try {
+          await ensureOrganisasiTable();
+        } catch {
+          // ignore
+        }
+        return [];
+      }
+      throw e;
+    }
   }
 
   try {
@@ -281,8 +333,21 @@ async function getOrganisasiRows() {
 async function getKontakRow() {
   const model = getSiteKontakModel();
   if (model) {
-    const row = await model.findUnique({ where: { id: 1 } });
-    return row || null;
+    try {
+      const row = await model.findUnique({ where: { id: 1 } });
+      return row || null;
+    } catch (e) {
+      const anyE = e as any;
+      if (anyE?.code === "P2021") {
+        try {
+          await ensureKontakTable();
+        } catch {
+          // ignore
+        }
+        return null;
+      }
+      throw e;
+    }
   }
 
   try {

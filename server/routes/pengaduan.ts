@@ -8,12 +8,18 @@ import { requireAuth, type AuthenticatedRequest } from "../auth";
 const router = Router();
 
 const pengaduanCreateSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().min(1),
-  category: z.string().min(1),
-  location: z.string().min(1),
-  description: z.string().min(1),
-  photoUrl: z.string().optional().nullable(),
+  name: z.string().min(1).max(100).transform(val => val.trim()),
+  phone: z.string().min(1).max(20).transform(val => val.trim()),
+  category: z.string().min(1).max(50).transform(val => val.trim()),
+  location: z.string().min(1).max(200).transform(val => val.trim()),
+  description: z.string().min(1).max(1000).transform(val => val.trim()),
+  photoUrl: z.string().optional().nullable().refine((url) => {
+    if (!url) return true; // Allow null/empty
+    // Validasi bahwa URL hanya mengarah ke /uploads/ dengan filename yang valid
+    return /^\/uploads\/pengaduan-[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i.test(url);
+  }, {
+    message: "Photo URL tidak valid. Hanya file yang diupload melalui sistem yang diperbolehkan"
+  }),
 });
 
 const pengaduanUpdateSchema = z.object({

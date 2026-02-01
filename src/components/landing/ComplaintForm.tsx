@@ -33,14 +33,47 @@ export function ComplaintForm() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
-    if (!file.type.startsWith('image/')) {
-      toast({ title: "Error", description: "File harus berupa gambar (JPG, PNG)", variant: "destructive" });
+    // Validasi extension
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      toast({ 
+        title: "Error", 
+        description: "Hanya file JPG, JPEG, PNG, atau WebP yang diperbolehkan", 
+        variant: "destructive" 
+      });
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB
-      toast({ title: "Error", description: "Ukuran file maksimal 2MB", variant: "destructive" });
+    // Validasi MIME type
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      toast({ 
+        title: "Error", 
+        description: "Tipe file tidak valid. Hanya image yang diperbolehkan", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Validasi ukuran file (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ 
+        title: "Error", 
+        description: "Ukuran file maksimal 5MB", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Validasi filename untuk security
+    if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\')) {
+      toast({ 
+        title: "Error", 
+        description: "Nama file tidak valid", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -68,13 +101,26 @@ export function ComplaintForm() {
       });
 
       if (!res.ok) {
-        throw new Error('Upload failed');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Upload failed with status ${res.status}`);
       }
 
       const data = await res.json();
-      return data.url || null;
+      
+      // Validasi response structure
+      if (!data.url || !data.filename) {
+        throw new Error('Invalid response from server');
+      }
+
+      return data.url;
     } catch (error) {
       console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      toast({
+        title: "Upload Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
       return null;
     }
   };
