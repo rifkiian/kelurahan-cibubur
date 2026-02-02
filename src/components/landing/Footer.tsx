@@ -49,13 +49,13 @@ export function Footer() {
               Melayani masyarakat dengan sepenuh hati. Portal resmi administrasi kependudukan Kelurahan Cibubur.
             </p>
             <div className="flex gap-3 mt-6">
-              <a href="#" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
+              <a href="https://www.facebook.com/pages/Kelurahan-Cibubur/123775357696469" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
               <a href="https://www.instagram.com/kel.cibubur/?hl=id" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
+              <a href="https://x.com/kel_cibubur" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center hover:bg-sidebar-primary transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
             </div>

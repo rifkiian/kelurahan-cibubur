@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/hooks/use-toast";
+import jayaRayaLogo from "@/assets/jaktimlogo.png";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -99,15 +100,15 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 z-50",
+        "fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 z-50 shadow-2xl",
         collapsed ? "w-20" : "w-64"
       )}
     >
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
-            <Building2 className="w-6 h-6 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={jayaRayaLogo} alt="Logo Jakarta Timur" className="w-full h-full object-contain" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
