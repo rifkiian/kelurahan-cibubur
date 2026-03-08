@@ -1,16 +1,19 @@
-// API base URL configuration
-export const API_BASE_URL = (import.meta.env.__API_BASE_URL__ as string) || "http://localhost:3001";
+declare const __API_BASE_URL__: string | undefined;
 
-// Helper function for API calls
+export const API_BASE_URL = (typeof __API_BASE_URL__ === "string" && __API_BASE_URL__.trim()
+  ? __API_BASE_URL__
+  : "http://localhost:3001").replace(/\/$/, "");
+
+export const apiUrl = (endpoint: string) => {
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${API_BASE_URL}${path}`;
+};
+
 export const apiFetch = async (endpoint: string, options?: RequestInit) => {
-  const url = endpoint.startsWith('/') 
-    ? `${API_BASE_URL}${endpoint}`
-    : `${API_BASE_URL}/${endpoint}`;
-
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(endpoint), {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!(options?.body instanceof FormData) ? { "Content-Type": "application/json" } : null),
       ...options?.headers,
     },
   });

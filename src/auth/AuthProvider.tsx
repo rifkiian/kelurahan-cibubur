@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { apiUrl } from "@/lib/api";
 
 type Role = "ADMIN" | "USER";
 
@@ -33,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchMe = useCallback(async (t: string) => {
-    const res = await fetch("/api/auth/me", {
+    const res = await fetch(apiUrl("/api/auth/me"), {
       headers: { Authorization: `Bearer ${t}` },
     });
     if (!res.ok) throw new Error("unauthorized");
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, fetchMe, logout]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),

@@ -13,6 +13,7 @@ router.use((req, res, next) => {
 
 const getPengaduanModel = () => (prisma as unknown as { pengaduan?: any }).pengaduan;
 const getPendudukModel = () => (prisma as unknown as { penduduk?: any }).penduduk;
+const getSiteMetricsModel = () => (prisma as unknown as { siteMetrics?: any }).siteMetrics;
  const getBeritaModel = () => (prisma as unknown as { berita?: any }).berita;
  const getAgendaModel = () => (prisma as unknown as { agenda?: any }).agenda;
 
@@ -23,15 +24,25 @@ const toIsoDay = (d: Date) => {
 };
 
 router.get("/overview", async (_req, res: Response) => {
-  const penduduk = getPendudukModel();
   const pengaduan = getPengaduanModel();
 
   let pendudukTotal = 0;
-  if (penduduk) {
-    pendudukTotal = await penduduk.count();
+  const metrics = getSiteMetricsModel();
+  if (metrics) {
+    const row = await metrics.findUnique({ where: { id: 1 } });
+    pendudukTotal = Number(row?.pendudukTotal || 0);
   } else {
-    const rows = await prisma.$queryRaw<any[]>`SELECT COUNT(*)::int as count FROM "Penduduk"`;
-    pendudukTotal = Number(rows?.[0]?.count || 0);
+    try {
+      const rows = await prisma.$queryRaw<any[]>`
+        SELECT COALESCE("pendudukTotal", 0)::int as count
+        FROM "SiteMetrics"
+        WHERE "id" = 1
+        LIMIT 1
+      `;
+      pendudukTotal = Number(rows?.[0]?.count || 0);
+    } catch {
+      pendudukTotal = 0;
+    }
   }
 
   let pengaduanTotal = 0;

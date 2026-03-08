@@ -12,7 +12,8 @@ type LayananItem = {
 const quickLinks = [
   { label: "Beranda", href: "/" },
   { label: "Layanan", href: "/layanan" },
-  { label: "Berita", href: "/#berita" },
+  { label: "Pengaduan", href: "/pengaduan" },
+  { label: "Berita", href: "/berita" },
   { label: "Tentang Kami", href: "/#tentang" },
   { label: "Portal Admin", href: "/admin" },
 ];

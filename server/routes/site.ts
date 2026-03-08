@@ -260,11 +260,17 @@ async function ensureMetricsTable() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "SiteMetrics" (
       "id" INTEGER PRIMARY KEY,
+      "pendudukTotal" INTEGER NOT NULL DEFAULT 0,
       "rtAktif" INTEGER NOT NULL DEFAULT 0,
       "rwAktif" INTEGER NOT NULL DEFAULT 0,
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
     )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "SiteMetrics"
+    ADD COLUMN IF NOT EXISTS "pendudukTotal" INTEGER NOT NULL DEFAULT 0
   `);
 }
 
@@ -382,11 +388,8 @@ router.get("/public/darurat", async (_req, res: Response) => {
 });
 
 router.get("/public/metrics", async (_req, res: Response) => {
-  const [pendudukTotal, metrics, pengaduanBulanIni] = await Promise.all([
-    getPendudukTotal(),
-    getMetricsRow(),
-    getPengaduanBulanIni(),
-  ]);
+  const [metrics, pengaduanBulanIni] = await Promise.all([getMetricsRow(), getPengaduanBulanIni()]);
+  const pendudukTotal = Number(metrics?.pendudukTotal || 0);
   const rtAktif = Number(metrics?.rtAktif || 0);
   const rwAktif = Number(metrics?.rwAktif || 0);
   return res.json({
@@ -436,11 +439,11 @@ const daruratColorSchema = z.enum(["red", "blue", "orange", "green", "purple", "
 
 const daruratItemSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
-  number: z.string().min(1),
+  name: z.string().min(1).max(100),
+  number: z.string().min(1).max(30),
   icon: daruratIconSchema,
   color: daruratColorSchema,
-  note: z.string().min(1),
+  note: z.string().min(1).max(200),
 });
 
 const updateDaruratSchema = z.object({
@@ -448,6 +451,7 @@ const updateDaruratSchema = z.object({
 });
 
 const updateMetricsSchema = z.object({
+  pendudukTotal: z.number().int().min(0).max(100000000),
   rtAktif: z.number().int().min(0).max(9999),
   rwAktif: z.number().int().min(0).max(9999),
 });
@@ -635,7 +639,7 @@ router.put("/darurat", async (req, res: Response) => {
 
 router.get("/metrics", async (_req, res: Response) => {
   const row = await getMetricsRow();
-  return res.json({ item: row || { id: 1, rtAktif: 0, rwAktif: 0 } });
+  return res.json({ item: row || { id: 1, pendudukTotal: 0, rtAktif: 0, rwAktif: 0 } });
 });
 
 router.put("/metrics", async (req, res: Response) => {
@@ -655,9 +659,10 @@ router.put("/metrics", async (req, res: Response) => {
   try {
     await ensureMetricsTable();
     const rows = await prisma.$queryRaw<any[]>`
-      INSERT INTO "SiteMetrics" ("id", "rtAktif", "rwAktif", "createdAt", "updatedAt")
-      VALUES (1, ${parsed.data.rtAktif}, ${parsed.data.rwAktif}, NOW(), NOW())
+      INSERT INTO "SiteMetrics" ("id", "pendudukTotal", "rtAktif", "rwAktif", "createdAt", "updatedAt")
+      VALUES (1, ${parsed.data.pendudukTotal}, ${parsed.data.rtAktif}, ${parsed.data.rwAktif}, NOW(), NOW())
       ON CONFLICT ("id") DO UPDATE SET
+        "pendudukTotal" = EXCLUDED."pendudukTotal",
         "rtAktif" = EXCLUDED."rtAktif",
         "rwAktif" = EXCLUDED."rwAktif",
         "updatedAt" = NOW()
