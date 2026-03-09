@@ -12,7 +12,7 @@
     "build:dev": "vite build --mode development",
     "start": "npm run start:server",
     "start:server": "tsx server/index.ts",
-    "start:production": "NODE_ENV=production prisma migrate deploy && NODE_ENV=production tsx server/index.ts",
+    "start:production": "DIRECT_DATABASE_URL=${DIRECT_DATABASE_URL:-$DATABASE_URL} NODE_ENV=production prisma migrate deploy && NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "prisma:generate": "prisma generate",
