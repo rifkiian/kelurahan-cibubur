@@ -20,6 +20,14 @@ if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
 
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("uncaughtException", err);
+});
+
 const app = express();
 
 async function bootstrapAdmin() {

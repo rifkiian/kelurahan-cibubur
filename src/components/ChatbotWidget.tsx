@@ -112,10 +112,21 @@ const DEFAULT_QUICK_REPLIES = [
   "Syarat surat nikah",
   "Cara mengurus KTP",
   "Lokasi kantor kelurahan",
+  "Butuh bantuan petugas",
 ];
+
+const ADMIN_WA_NUMBER = (import.meta.env.VITE_ADMIN_WA_NUMBER as string | undefined)?.trim() || "";
+const ADMIN_WA_LABEL = (import.meta.env.VITE_ADMIN_WA_LABEL as string | undefined)?.trim() || "Admin Kelurahan";
 
 function assistantReplyFor(message: string): LocalReply {
   const m = normalize(message);
+
+  if (m.includes(normalize("butuh bantuan petugas")) || m.includes(normalize("hubungi admin")) || m.includes(normalize("whatsapp admin"))) {
+    return {
+      text: "Baik. Jika ingin dibantu petugas, silakan hubungi admin melalui WhatsApp.",
+      quickReplies: ["Hubungi Admin via WhatsApp", "Jam operasional kantor"],
+    };
+  }
 
   if (m === normalize("buka halaman pengaduan")) {
     return {
@@ -168,6 +179,165 @@ function assistantReplyFor(message: string): LocalReply {
     };
   }
 
+  if (
+    (m.includes("akta") && m.includes("lahir")) ||
+    m.includes("akte lahir") ||
+    m.includes("akta kelahiran") ||
+    m.includes("pembuatan akta lahir")
+  ) {
+    return {
+      text:
+        "Persyaratan pembuatan Akta Lahir:\n" +
+        "- Surat keterangan lahir dari Rumah Sakit / Bidan / Klinik\n" +
+        "- Fotokopi KTP orang tua\n" +
+        "- Fotokopi Kartu Keluarga (KK)\n" +
+        "- Fotokopi Buku Nikah / Akta Perkawinan\n" +
+        "- Mengisi Formulir F.201 dari Kelurahan",
+      quickReplies: ["Lokasi kantor kelurahan", "Jam operasional kantor", "Butuh bantuan petugas"],
+    };
+  }
+
+  if ((m.includes("akta") && m.includes("kematian")) || m.includes("akta kematian") || m.includes("akte kematian")) {
+    return {
+      text:
+        "Persyaratan pembuatan Akta Kematian:\n" +
+        "- Surat keterangan kematian dari Rumah Sakit / Puskesmas\n" +
+        "- Fotokopi KTP dan KK almarhum\n" +
+        "- Fotokopi KTP dan KK ahli waris\n" +
+        "- Mengisi Formulir F.201 dari Kelurahan",
+      quickReplies: ["Lokasi kantor kelurahan", "Jam operasional kantor", "Butuh bantuan petugas"],
+    };
+  }
+
+  if (m.includes("ktp") || m.includes("ktp-el") || m.includes("ktpel") || m.includes("kartu tanda penduduk")) {
+    if (m.includes("rusak")) {
+      return {
+        text:
+          "Persyaratan penggantian KTP-el rusak:\n" +
+          "- Membawa KTP asli yang rusak\n" +
+          "- Fotokopi Kartu Keluarga (KK)\n" +
+          "- Mengisi Formulir F.102",
+        quickReplies: ["KTP-el (Hilang)", "KTP-el (Baru)", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("hilang")) {
+      return {
+        text:
+          "Persyaratan penggantian KTP-el hilang:\n" +
+          "- Surat keterangan kehilangan dari Kepolisian\n" +
+          "- Fotokopi Kartu Keluarga (KK)\n" +
+          "- Mengisi Formulir F.102",
+        quickReplies: ["KTP-el (Rusak)", "KTP-el (Baru)", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("baru") || m.includes("buat") || m.includes("pembuatan")) {
+      return {
+        text:
+          "Persyaratan pembuatan KTP-el baru:\n" +
+          "- Fotokopi Akta Lahir\n" +
+          "- Fotokopi Kartu Keluarga (KK)\n" +
+          "- Mengisi Formulir F.102",
+        quickReplies: ["KTP-el (Hilang)", "KTP-el (Rusak)", "Butuh bantuan petugas"],
+      };
+    }
+  }
+
+  if (m.includes("kartu keluarga") || m.includes(" kk") || m === "kk" || m.includes("kartu keluarga (kk)")) {
+    if (m.includes("baru")) {
+      return {
+        text:
+          "Persyaratan pembuatan KK baru:\n" +
+          "- Fotokopi Akta Perkawinan / Buku Nikah\n" +
+          "- Fotokopi Kutipan Akta Cerai (jika ada)\n" +
+          "- Surat Keterangan Pindah Datang (SKPD) jika pindah dari daerah lain",
+        quickReplies: ["Perubahan Data Kartu Keluarga", "KK Hilang / Rusak", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("perubahan") || m.includes("ubah") || m.includes("perbarui") || m.includes("data")) {
+      return {
+        text:
+          "Persyaratan perubahan data pada KK:\n" +
+          "- Mengisi dan menandatangani Formulir F.102 di Kelurahan\n" +
+          "- Membawa KK lama\n" +
+          "- Dokumen pendukung perubahan data (akta, ijazah, dan dokumen lainnya)",
+        quickReplies: ["KK Hilang / Rusak", "Kartu Keluarga (KK) Baru", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("hilang") || m.includes("rusak")) {
+      return {
+        text:
+          "Persyaratan penggantian KK hilang atau rusak:\n" +
+          "- Surat keterangan kehilangan dari Kepolisian (jika hilang)\n" +
+          "- KTP-el atau KK lama (jika rusak)",
+        quickReplies: ["Perubahan Data Kartu Keluarga", "Kartu Keluarga (KK) Baru", "Butuh bantuan petugas"],
+      };
+    }
+  }
+
+  if (m.includes("pindah") || m.includes("pindah domisili") || m.includes("pindah datang") || m.includes("mutasi")) {
+    if (m.includes("masuk") || m.includes("datang")) {
+      return {
+        text:
+          "Persyaratan pindah domisili (masuk kelurahan):\n" +
+          "- Surat Pindah dari daerah asal\n" +
+          "- Fotokopi KTP dari daerah asal\n" +
+          "- Fotokopi KK dari daerah asal\n" +
+          "- Mengisi Formulir F.102",
+        quickReplies: ["Pindah Domisili (Keluar)", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("keluar")) {
+      return {
+        text:
+          "Persyaratan pindah domisili (keluar):\n" +
+          "- Fotokopi KTP\n" +
+          "- Fotokopi Kartu Keluarga\n" +
+          "- Mengisi Formulir F.102",
+        quickReplies: ["Pindah Domisili (Masuk Kelurahan)", "Butuh bantuan petugas"],
+      };
+    }
+  }
+
+  if (m.includes("kia") || m.includes("kartu identitas anak")) {
+    if (m.includes("hilang") || m.includes("rusak")) {
+      return {
+        text:
+          "Persyaratan penggantian KIA hilang atau rusak:\n" +
+          "- Surat keterangan kehilangan dari Kepolisian atau KIA lama (jika rusak)\n" +
+          "- Fotokopi Kartu Keluarga\n" +
+          "- Pas foto ukuran 2×3 sebanyak 2 lembar (usia ≥ 5 tahun)",
+        quickReplies: ["KIA (Kartu Identitas Anak) Baru", "KIA karena Pindah Datang", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("pindah") || m.includes("datang")) {
+      return {
+        text:
+          "Persyaratan KIA karena pindah datang:\n" +
+          "- KIA lama\n" +
+          "- Fotokopi Kartu Keluarga\n" +
+          "- Pas foto ukuran 2×3 (usia ≥ 5 tahun)",
+        quickReplies: ["KIA (Kartu Identitas Anak) Baru", "Butuh bantuan petugas"],
+      };
+    }
+    if (m.includes("baru") || m.includes("buat") || m.includes("pembuatan")) {
+      return {
+        text:
+          "Persyaratan pembuatan KIA baru:\n" +
+          "- Fotokopi Akta Lahir Anak\n" +
+          "- Fotokopi Kartu Keluarga\n" +
+          "- Pas foto ukuran 2×3 sebanyak 2 lembar (untuk anak usia ≥ 5 tahun)",
+        quickReplies: ["KIA Hilang / Rusak", "Butuh bantuan petugas"],
+      };
+    }
+  }
+
+  if (m.includes("skp") || m.includes("skpd")) {
+    return {
+      text: "Untuk layanan SKP/SKPD, mohon sebutkan apakah yang dimaksud Surat Keterangan Pindah (SKP) atau Surat Keterangan Pindah Datang (SKPD), agar saya bisa bantu persyaratannya. Jika ingin dibantu petugas, silakan pilih 'Butuh bantuan petugas'.",
+      quickReplies: ["Pindah Domisili (Masuk Kelurahan)", "Pindah Domisili (Keluar)", "Butuh bantuan petugas"],
+    };
+  }
+
   if (m.includes("pengaduan") || m.includes("lapor") || m.includes("keluhan")) {
     return {
       text: "Untuk membuat pengaduan, buka menu Pengaduan lalu isi data, lokasi, kategori, dan deskripsi. Jika ada foto, kamu bisa lampirkan.",
@@ -206,6 +376,7 @@ export function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [waEscalationEnabled, setWaEscalationEnabled] = useState(false);
   const [profile, setProfile] = useState<ChatProfile | null>(() => {
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
@@ -242,6 +413,12 @@ export function ChatbotWidget() {
   const hasGreeting = useMemo(() => messages.some((m) => m.role === "assistant"), [messages]);
 
   const profileReady = !!profile?.name && !!profile?.phone;
+
+  const openWhatsApp = (text: string) => {
+    if (!ADMIN_WA_NUMBER) return;
+    const url = `https://wa.me/${ADMIN_WA_NUMBER}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -422,6 +599,13 @@ export function ChatbotWidget() {
     if (sending) return;
     if (!profileReady) return;
 
+    if (normalize(trimmed) === normalize("Hubungi Admin via WhatsApp")) {
+      setWaEscalationEnabled(true);
+      setMessages((prev) => [...prev, { id: makeId(), role: "user", text: trimmed, createdAt: Date.now() }]);
+      if (ADMIN_WA_NUMBER) openWhatsApp(messages.slice(-1)[0]?.text || "");
+      return;
+    }
+
     const localReply = assistantReplyFor(trimmed);
     if (localReply.action === "goto_pengaduan") {
       setQuickReplies(localReply.quickReplies);
@@ -448,6 +632,8 @@ export function ChatbotWidget() {
     if (supabase) {
       try {
         setSending(true);
+        const optimisticId = makeId();
+        setMessages((prev) => [...prev, { id: optimisticId, role: "user", text: trimmed, createdAt: Date.now() }]);
         const userPayload = encodeUserContent(trimmed, profile as ChatProfile);
         const { data: createdUser, error: insertUserError } = await supabase
           .from("messages")
@@ -457,15 +643,18 @@ export function ChatbotWidget() {
         if (!insertUserError && createdUser) {
           const row = createdUser as SupabaseMessage;
           supabaseSeenIdsRef.current.add(row.id);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: String(row.id),
-              role: "user",
-              text: decodeUserContent(row.content).displayText,
-              createdAt: Date.parse(row.created_at) || Date.now(),
-            },
-          ]);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === optimisticId
+                ? {
+                    id: String(row.id),
+                    role: "user",
+                    text: decodeUserContent(row.content).displayText,
+                    createdAt: Date.parse(row.created_at) || Date.now(),
+                  }
+                : m,
+            ),
+          );
         }
 
         if (isInServiceHours()) {
@@ -479,6 +668,7 @@ export function ChatbotWidget() {
               createdAt: Date.now(),
             },
           ]);
+          setWaEscalationEnabled(true);
           return;
         }
 
@@ -499,6 +689,7 @@ export function ChatbotWidget() {
           replyText = data.reply?.trim() || "";
         } catch {
           replyText = localReply.text;
+          setWaEscalationEnabled(true);
         }
 
         if (replyText) {
@@ -507,6 +698,7 @@ export function ChatbotWidget() {
             "Syarat surat nikah",
             "Cara mengurus KTP",
             "Lokasi kantor kelurahan",
+            "Butuh bantuan petugas",
           ]);
           const { data: createdAdmin } = await supabase
             .from("messages")
@@ -575,6 +767,7 @@ export function ChatbotWidget() {
         "Syarat surat nikah",
         "Cara mengurus KTP",
         "Lokasi kantor kelurahan",
+        "Butuh bantuan petugas",
       ]);
       setMessages((prev) => [
         ...prev,
@@ -587,6 +780,7 @@ export function ChatbotWidget() {
       ]);
     } catch {
       setQuickReplies(localReply.quickReplies);
+      setWaEscalationEnabled(true);
       setMessages((prev) => [
         ...prev,
         {
@@ -665,7 +859,7 @@ export function ChatbotWidget() {
                         : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-none")
                     }
                   >
-                    {m.text}
+                    <div className="whitespace-pre-line leading-relaxed break-words">{m.text}</div>
                   </div>
                 </div>
               );
@@ -700,6 +894,19 @@ export function ChatbotWidget() {
                 ))}
               </div>
             </div>
+
+            {profileReady && waEscalationEnabled && ADMIN_WA_NUMBER && (
+              <div className="mb-2">
+                <Button
+                  type="button"
+                  className="w-full rounded-full"
+                  onClick={() => openWhatsApp(messages.slice(-1)[0]?.text || "")}
+                  disabled={sending}
+                >
+                  Hubungi Admin via WhatsApp
+                </Button>
+              </div>
+            )}
 
             {!profileReady ? (
               <div className="space-y-2">

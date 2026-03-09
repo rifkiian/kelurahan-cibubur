@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
-import { requireAuth, type AuthenticatedRequest } from "../auth";
 
 const router = Router();
 
@@ -14,10 +13,6 @@ const chatSchema = z.object({
       }),
     )
     .optional(),
-});
-
-const draftSchema = z.object({
-  question: z.string().min(1),
 });
 
 type GeminiContent = {
@@ -81,28 +76,6 @@ async function callGemini(message: string, history?: Array<{ role: "user" | "ass
   return replyText as string;
 }
 
-router.post("/draft", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const auth = req.auth;
-  if (!auth || auth.role !== "ADMIN") return res.status(403).json({ message: "Forbidden" });
-
-  const parsed = draftSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ message: "Invalid request" });
-
-  try {
-    const prompt =
-      "Buat draft balasan sebagai admin Kelurahan Cibubur. Balasan harus sopan, singkat, jelas, dan menggunakan Bahasa Indonesia. Jangan meminta data sensitif (PIN, OTP, nomor rekening). Jangan mengarang; jika tidak yakin, minta klarifikasi atau arahkan warga untuk datang/menunggu jam kerja. Pertanyaan warga: " +
-      parsed.data.question;
-    const draftAnswer = await callGemini(prompt);
-    return res.json({ draftAnswer });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown_error";
-    if (msg === "missing_api_key") {
-      return res.status(500).json({ message: "Server misconfigured" });
-    }
-    return res.status(500).json({ message: "Chat error" });
-  }
-});
-
 router.post("/", async (req: Request, res: Response) => {
   const parsed = chatSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid request" });
@@ -111,11 +84,15 @@ router.post("/", async (req: Request, res: Response) => {
     const reply = await callGemini(parsed.data.message, parsed.data.history);
     return res.json({ reply });
   } catch (e) {
+    console.error("chat_error", e);
     const msg = e instanceof Error ? e.message : "unknown_error";
     if (msg === "missing_api_key") {
       return res.status(500).json({ message: "Server misconfigured" });
     }
-    return res.status(500).json({ message: "Chat error" });
+    if (msg.startsWith("gemini_error:")) {
+      return res.status(502).json({ message: msg });
+    }
+    return res.status(500).json({ message: msg || "Chat error" });
   }
 });
 

@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Bot, Loader2, Send, Sparkles, User } from "lucide-react";
+import { Bot, Send, User } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/auth/AuthProvider";
 import { getSupabase } from "@/utils/supabase";
 import { toast } from "@/hooks/use-toast";
 
@@ -45,19 +44,11 @@ function stripBotPrefix(content: string) {
 
 export default function AdminLiveChat() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { token } = useAuth();
   const supabase = getSupabase();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyInput, setReplyInput] = useState("");
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const headers = useMemo(() => {
-    const h: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) h.Authorization = `Bearer ${token}`;
-    return h;
-  }, [token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,39 +97,6 @@ export default function AdminLiveChat() {
       toast({
         title: "Gagal",
         description: e instanceof Error ? e.message : "Gagal mengirim",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const askAiMutation = useMutation({
-    mutationFn: async () => {
-      const lastUserMessageRaw = [...messages].reverse().find((m) => m.role === "user")?.content;
-      const lastUserMessage = lastUserMessageRaw ? decodeUserContent(lastUserMessageRaw).displayText : "";
-      if (!lastUserMessage) throw new Error("Belum ada pesan user untuk ditanggapi.");
-
-      const res = await fetch("/api/chat/draft", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ question: lastUserMessage }),
-      });
-      if (!res.ok) throw new Error("Gagal membuat draft");
-      const data = (await res.json()) as { draftAnswer?: string };
-      const draft = data.draftAnswer?.trim();
-      if (!draft) throw new Error("Draft kosong");
-      setReplyInput(draft);
-    },
-    onMutate: () => {
-      setIsGeneratingAI(true);
-    },
-    onSuccess: () => {
-      setIsGeneratingAI(false);
-    },
-    onError: (e) => {
-      setIsGeneratingAI(false);
-      toast({
-        title: "AI Error",
-        description: e instanceof Error ? e.message : "Gagal membuat draft",
         variant: "destructive",
       });
     },
@@ -223,20 +181,10 @@ export default function AdminLiveChat() {
                         <Textarea
                           value={replyInput}
                           onChange={(e) => setReplyInput(e.target.value)}
-                          placeholder="Tulis balasan manual di sini, atau minta bantuan AI..."
-                          className="w-full resize-none outline-none p-4 text-gray-700 min-h-[80px] pr-32 font-sans border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          placeholder="Tulis balasan manual di sini..."
+                          className="w-full resize-none outline-none p-4 text-gray-700 min-h-[80px] font-sans border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                           rows={3}
                         />
-
-                        <button
-                          type="button"
-                          onClick={() => askAiMutation.mutate()}
-                          disabled={isGeneratingAI}
-                          className="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm px-3 py-2 rounded-lg flex items-center gap-2 shadow-md transition-all hover:shadow-lg disabled:opacity-70"
-                        >
-                          {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                          <span className="font-medium">Draft AI</span>
-                        </button>
                       </div>
 
                       <div className="flex justify-end">
