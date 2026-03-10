@@ -375,6 +375,7 @@ export function ChatbotWidget() {
   const navigate = useNavigate();
   const supabase = getSupabase();
   const [supabaseUserId, setSupabaseUserId] = useState<string>("");
+  const [supabaseAuthError, setSupabaseAuthError] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -464,22 +465,33 @@ export function ChatbotWidget() {
     let cancelled = false;
 
     (async () => {
-      const sessionRes = await supabase.auth.getSession();
-      let session = sessionRes.data.session;
+      try {
+        const sessionRes = await supabase.auth.getSession();
+        if (sessionRes.error) throw sessionRes.error;
+        let session = sessionRes.data.session;
 
-      if (!session) {
-        const signInRes = await supabase.auth.signInAnonymously();
-        session = signInRes.data.session;
+        if (!session) {
+          const signInRes = await supabase.auth.signInAnonymously();
+          if (signInRes.error) throw signInRes.error;
+          session = signInRes.data.session;
+        }
+
+        const uid = session?.user?.id || "";
+        if (cancelled) return;
+        setSupabaseAuthError("");
+        setSupabaseUserId(uid);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "supabase_auth_failed";
+        if (cancelled) return;
+        setSupabaseUserId("");
+        setSupabaseAuthError(msg);
       }
-
-      const uid = session?.user?.id || "";
-      if (cancelled) return;
-      setSupabaseUserId(uid);
     })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const uid = session?.user?.id || "";
       if (cancelled) return;
+      setSupabaseAuthError("");
       setSupabaseUserId(uid);
     });
 
@@ -1009,7 +1021,13 @@ export function ChatbotWidget() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={supabaseReady ? "Ketik pesan Anda..." : "Menyiapkan sesi chat..."}
+                  placeholder={
+                    supabaseReady
+                      ? "Ketik pesan Anda..."
+                      : supabaseAuthError
+                        ? `Supabase Auth error: ${supabaseAuthError}`
+                        : "Menyiapkan sesi chat..."
+                  }
                   className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm text-gray-700 placeholder:text-gray-400"
                   disabled={sending || !supabaseReady}
                 />
