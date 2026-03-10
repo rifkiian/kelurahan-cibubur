@@ -21,6 +21,7 @@ type ChatApiHistoryItem = {
 
 type SupabaseMessage = {
   id: number;
+  user_id: string;
   content: string;
   role: "user" | "admin";
   created_at: string;
@@ -373,6 +374,7 @@ function assistantReplyFor(message: string): LocalReply {
 export function ChatbotWidget() {
   const navigate = useNavigate();
   const supabase = getSupabase();
+  const [supabaseUserId, setSupabaseUserId] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -461,7 +463,43 @@ export function ChatbotWidget() {
     let cancelled = false;
 
     (async () => {
-      const { data, error } = await supabase.from("messages").select("*").order("created_at");
+      const sessionRes = await supabase.auth.getSession();
+      let session = sessionRes.data.session;
+
+      if (!session) {
+        const signInRes = await supabase.auth.signInAnonymously();
+        session = signInRes.data.session;
+      }
+
+      const uid = session?.user?.id || "";
+      if (cancelled) return;
+      setSupabaseUserId(uid);
+    })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const uid = session?.user?.id || "";
+      if (cancelled) return;
+      setSupabaseUserId(uid);
+    });
+
+    return () => {
+      cancelled = true;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    if (!supabaseUserId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("user_id", supabaseUserId)
+        .order("created_at");
       if (cancelled) return;
       if (error) return;
       const rows = (data || []) as SupabaseMessage[];
@@ -483,7 +521,7 @@ export function ChatbotWidget() {
       .channel("realtime-chat-widget")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages", filter: `user_id=eq.${supabaseUserId}` },
         (payload) => {
           const row = payload.new as SupabaseMessage;
           if (!row?.id) return;
@@ -506,12 +544,17 @@ export function ChatbotWidget() {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [supabase]);
+  }, [supabase, supabaseUserId]);
 
   const refreshChat = async () => {
     if (sending) return;
     if (supabase) {
-      const { data, error } = await supabase.from("messages").select("*").order("created_at");
+      if (!supabaseUserId) return;
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("user_id", supabaseUserId)
+        .order("created_at");
       if (error) return;
       const rows = (data || []) as SupabaseMessage[];
       const seen = new Set<number>();
@@ -630,6 +673,7 @@ export function ChatbotWidget() {
     }
 
     if (supabase) {
+      if (!supabaseUserId) return;
       try {
         setSending(true);
         const optimisticId = makeId();
