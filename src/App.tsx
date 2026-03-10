@@ -22,7 +22,6 @@ import AdminStatistik from "./pages/AdminStatistik";
 import AdminTentang from "./pages/AdminTentang";
 import AdminKontak from "./pages/AdminKontak";
 import AdminNotifikasi from "./pages/AdminNotifikasi";
-import AdminLiveChat from "./pages/AdminLiveChat";
 import AdminPengaturan from "./pages/AdminPengaturan";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -122,14 +121,6 @@ const App = () => (
                 element={
                   <ProtectedRoute requireRole="ADMIN">
                     <AdminNotifikasi />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/live-chat"
-                element={
-                  <ProtectedRoute requireRole="ADMIN">
-                    <AdminLiveChat />
                   </ProtectedRoute>
                 }
               />

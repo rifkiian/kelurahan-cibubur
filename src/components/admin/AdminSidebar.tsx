@@ -6,7 +6,6 @@ import {
   Users, 
   FileText, 
   MessageSquare,
-  MessagesSquare,
   Newspaper, 
   Settings, 
   LogOut,
@@ -33,7 +32,6 @@ const menuItems = [
   { icon: Info, label: "Tentang", href: "/admin/tentang" },
   { icon: Phone, label: "Kontak", href: "/admin/kontak" },
   { icon: Bell, label: "Notifikasi", href: "/admin/notifikasi" },
-  { icon: MessagesSquare, label: "Live Chat", href: "/admin/live-chat" },
   { icon: Settings, label: "Pengaturan", href: "/admin/pengaturan" },
 ];
 
