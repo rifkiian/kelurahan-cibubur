@@ -415,6 +415,7 @@ export function ChatbotWidget() {
   const hasGreeting = useMemo(() => messages.some((m) => m.role === "assistant"), [messages]);
 
   const profileReady = !!profile?.name && !!profile?.phone;
+  const supabaseReady = !supabase || !!supabaseUserId;
 
   const openWhatsApp = (text: string) => {
     if (!ADMIN_WA_NUMBER) return;
@@ -931,7 +932,7 @@ export function ChatbotWidget() {
                     size="sm"
                     className="rounded-full bg-white"
                     onClick={() => submit(q)}
-                    disabled={sending || !profileReady}
+                    disabled={sending || !profileReady || !supabaseReady}
                   >
                     {q}
                   </Button>
@@ -998,6 +999,7 @@ export function ChatbotWidget() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (!supabaseReady) return;
                   const v = input;
                   setInput("");
                   submit(v);
@@ -1007,13 +1009,13 @@ export function ChatbotWidget() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ketik pesan Anda..."
+                  placeholder={supabaseReady ? "Ketik pesan Anda..." : "Menyiapkan sesi chat..."}
                   className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm text-gray-700 placeholder:text-gray-400"
-                  disabled={sending}
+                  disabled={sending || !supabaseReady}
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || sending}
+                  disabled={!input.trim() || sending || !supabaseReady}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white p-2 rounded-full transition"
                   aria-label="Kirim"
                 >
