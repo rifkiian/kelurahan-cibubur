@@ -1,8 +1,16 @@
 declare const __API_BASE_URL__: string | undefined;
 
-export const API_BASE_URL = (typeof __API_BASE_URL__ === "string" && __API_BASE_URL__.trim()
-  ? __API_BASE_URL__
-  : "http://localhost:3001").replace(/\/$/, "");
+const injectedBase = typeof __API_BASE_URL__ === "string" ? __API_BASE_URL__.trim() : "";
+const browserOrigin = typeof window !== "undefined" ? window.location.origin : "";
+const isProbablyInvalidInjectedBase =
+  !injectedBase ||
+  injectedBase.includes("your-backend-url.railway.app") ||
+  (!/^https?:\/\//i.test(injectedBase) && injectedBase !== "/");
+
+export const API_BASE_URL = (isProbablyInvalidInjectedBase
+  ? browserOrigin || "http://localhost:3001"
+  : injectedBase
+).replace(/\/$/, "");
 
 export const apiUrl = (endpoint: string) => {
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
